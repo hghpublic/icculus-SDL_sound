@@ -7,10 +7,11 @@ set(SDLSOUND_VERSION 2.0.3)
 # Increment this if/when we break backwards compatibility.
 set(SDLSOUND_SOVERSION 2)
 
-cmake_minimum_required(VERSION 3.0...3.5)
+cmake_minimum_required(VERSION 3.30)
 
 project(SDL_sound
     VERSION ${SDLSOUND_VERSION}
+    DESCRIPTION "SDL_sound for gltron"
     LANGUAGES C
 )
 
@@ -197,7 +198,9 @@ set(SDLSOUND_ALL_SRCS
     ${LIBMODPLUG_HDRS}
 )
 
-option(SDLSOUND_BUILD_STATIC "Build static library" TRUE)
+if(PROJECT_IS_TOP_LEVEL)
+    option(SDLSOUND_BUILD_STATIC "Build static library" TRUE)
+endif()
 if(OS2) # no static library on os/2
     set(SDLSOUND_BUILD_STATIC FALSE)
 endif()
@@ -228,7 +231,14 @@ if(SDLSOUND_BUILD_SHARED)
     set_target_properties(SDL2_sound PROPERTIES VERSION ${SDLSOUND_VERSION})
     set_target_properties(SDL2_sound PROPERTIES SOVERSION ${SDLSOUND_SOVERSION})
     # Use `Compatible Interface Properties` to ensure a shared SDL_sound is linked to a shared SDL library
-    set_property(TARGET SDL2_sound PROPERTY INTERFACE_SDL2_SHARED ON)
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        # FIXME: This is a workaround for the fact that INTERFACE_SDL2_SHARED
+        # conflicts with SDL2::SDL2 from vcpkg in devcontainer
+        set_property(TARGET SDL2_sound PROPERTY INTERFACE_SDL2_SHARED OFF)
+    else()
+        set_property(TARGET SDL2_sound PROPERTY INTERFACE_SDL2_SHARED ON)
+    endif()
+    
     set_property(TARGET SDL2_sound APPEND PROPERTY COMPATIBLE_INTERFACE_BOOL SDL2_SHARED)
     if(WIN32 OR OS2)
         SET_TARGET_PROPERTIES(SDL2_sound PROPERTIES DEFINE_SYMBOL SDL_SOUND_DLL_EXPORTS)
@@ -254,8 +264,10 @@ if(NOT SDLSOUND_BUILD_SHARED AND NOT SDLSOUND_BUILD_STATIC)
     message(FATAL "Both shared and static libraries are disabled!")
 endif()
 
-option(SDLSOUND_BUILD_TEST "Build stdio test program." TRUE)
-mark_as_advanced(SDLSOUND_BUILD_TEST)
+if(PROJECT_IS_TOP_LEVEL)
+  option(SDLSOUND_BUILD_TEST "Build stdio test program." TRUE)
+  mark_as_advanced(SDLSOUND_BUILD_TEST)
+endif()
 if(SDLSOUND_BUILD_TEST)
     add_executable(playsound examples/playsound.c)
     if(TARGET SDL2::SDL2)
@@ -353,7 +365,8 @@ install(FILES src/SDL_sound.h
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/SDL2_sound.pc
     DESTINATION "${PKGCONFIG_INSTALLDIR}")
 
-option(SDLSOUND_BUILD_DOCS "Build documentation" TRUE)
+# option(SDLSOUND_BUILD_DOCS "Build documentation" TRUE)
+option(SDLSOUND_BUILD_DOCS "Build documentation" FALSE)
 mark_as_advanced(SDLSOUND_BUILD_DOCS)
 
 if(SDLSOUND_BUILD_DOCS)
@@ -418,6 +431,7 @@ message_bool_option("Build static library" SDLSOUND_BUILD_STATIC)
 message_bool_option("Build shared library" SDLSOUND_BUILD_SHARED)
 message_bool_option("Build stdio test program" SDLSOUND_BUILD_TEST)
 message_bool_option("Build documentation" SDLSOUND_BUILD_DOCS)
+message_bool_option("PROJECT_IS_TOP_LEVEL" PROJECT_IS_TOP_LEVEL)
 
 # Make sure SDL2_sound::SDL2_sound always exists
 if(TARGET SDL2_sound::SDL2_sound-static AND NOT TARGET SDL2_sound::SDL2_sound)
