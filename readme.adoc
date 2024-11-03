@@ -1,0 +1,23 @@
+= SDL_sound
+
+https://icculus.org/SDL_sound/
+
+https://github.com/icculus/SDL_sound
+
+https://github.com/hghpublic/icculus-SDL_sound
+
+
+== Examples
+
+playsound::
++
+----
+.\playsound.exe .\song_revenge_of_cats.mp3     
+playsound: Now playing [song_revenge_of_cats.mp3]...
+----
+playsound_simple::
++
+----
+.\playsound_simple.exe .\song_revenge_of_cats.mp3
+Now playing [.\song_revenge_of_cats.mp3]...
+----
